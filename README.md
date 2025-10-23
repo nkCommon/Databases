@@ -88,7 +88,7 @@ PASSWORD="***********"
     << Se execute funktion >>    
 
 
-## Eksempel kode
+## Eksempel kode (sample.py)
 ```python
 from Database.src.dbfactory import DatabaseFactory, DatabaseType
 import os
