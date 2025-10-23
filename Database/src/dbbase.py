@@ -38,13 +38,7 @@ class DBBase(ABC):
         """Execute a SELECT query and return rows."""
         pass
     @abstractmethod
-    def select_where(
-        self,
-        query_or_table: str,
-        columns: Sequence[str] | None = None,
-        where: str | None = None,
-        params: tuple = ()
-    ) -> list[dict[str, Any]]:
+    def select_where(self, query_or_table: str, columns: Sequence[str] | None = None, where: str | None = None, params: tuple = ()) -> list[dict[str, Any]]:
         pass
     @abstractmethod
     def execute(self, query: str, params: tuple = ()) -> None:

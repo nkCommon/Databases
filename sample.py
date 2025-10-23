@@ -1,96 +1,3 @@
-# Databases
-implement database interfaces
-
-## supported database
-* SQL Server
-* PostgreSQL
-* MySql ( not tested )
-* SQLite ( not tested )
-
-## Installation
-
-### Forudsætninger
-
-- Python 3.12 eller nyere  
-- uv
-
-
-### Opsætning
-
-1. Klon repository’et:
-```bash
-git clone https://github.com/nkCommon/Databases.git
-cd Databases
-uv sync
-````
-### Brug af biblioteket
-
-#### Standard installation
-1. installer whl fil:
-```uv
- uv add Databases@git+https://github.com/nkCommon/Databases.git
-```
-
-2. importer database factory and types:
-```python
-from Database.src.dbfactory import DBFactory, DatabaseType
-```
-3. Opret .env fil
-```bash
-DATABASE_SERVER="localhost"
-DATABASE="test"
-USER="testuser"
-PASSWORD="***********"
-```
-
-### Funktioner
-+ def select(self, query: str, params: tuple = ()) -> list[dict[str, Any]]:
-+ def select_where(self, query_or_table: str, columns: Sequence[str] | None = None, where: str | None = None, params: tuple = ()) -> list[dict[str, Any]]:
- 
-    select from table where.
-
-    **Retur værdi**
-    Row(s)
-
-- def execute(self, query: str, params: tuple = ()) -> None:
-  
-    execute sql statements
-
-    **Retur værdier**
-    
-    Ingen fejl
-    ```bash
-    {"success": True, "rows_affected": -1, "error": None}
-    ```
-    Ved fejl
-    ```bash
-    {"success": False, "rows_affected": 0, "error": exception} 
-    ```
-
-+ def insert(self, table: str, data: dict[str, Any]) -> None:
-
-    Insert row into table
-    **Retur værdier**
-
-    << Se execute funktion >>    
-
-+ def update(self, table: str, data: dict[str, Any], where: str, params: tuple = ()) -> None:
-
-    Insert row into table
-    **Retur værdier**
-
-    << Se execute funktion >>    
-
-+ def delete(self, table: str, where: str, params: tuple = ()) -> None:
-
-    Insert row into table
-    **Retur værdier**
-
-    << Se execute funktion >>    
-
-
-## Eksempel kode
-```python
 from Database.src.dbfactory import DatabaseFactory, DatabaseType
 import os
 from dotenv import load_dotenv
@@ -147,16 +54,11 @@ def main():
     rows = db.select("SELECT * FROM tst.test;")
     print(f"Total rows in tst.test: {len(rows)}")
 
+
     db.execute("DELETE FROM tst.test;")
     rows = db.select("SELECT * FROM tst.test;")
     print(f"Total rows in tst.test: {len(rows)}")
 
+
 if __name__ == "__main__":
     main()
-
-```
-
-
-
-
-
