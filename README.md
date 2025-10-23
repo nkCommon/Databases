@@ -2,10 +2,10 @@
 implement database interfaces
 
 ## supported database
-* SQL Server
-* PostgreSQL
-* MySql ( not tested )
-* SQLite ( not tested )
+* SQL Server (test implemented)
+* PostgreSQL (test implemented)
+* MySql ( NOT tested )
+* SQLite ( NOT tested )
 
 ## Installation
 
@@ -13,7 +13,6 @@ implement database interfaces
 
 - Python 3.12 eller nyere  
 - uv
-
 
 ### Opsætning
 
