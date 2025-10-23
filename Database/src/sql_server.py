@@ -46,3 +46,7 @@ class MSSQLDatabase(DBBase):
         values = tuple(data.values()) + params
         query = f"UPDATE {table} SET {set_clause} WHERE {where}"
         return self.execute(query, values)
+    
+    def delete(self, table: str, where: str, params: tuple = ()) -> None:
+        query = f"DELETE FROM {table} WHERE {where}"
+        return self.execute(query, params)

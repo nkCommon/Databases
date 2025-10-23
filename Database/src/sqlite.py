@@ -15,7 +15,7 @@ class SQLiteDatabase(DBBase):
         conn = sqlite3.connect(self.database)
         conn.row_factory = sqlite3.Row  # return dict-like rows
         return conn
-
+ 
     def select(self, query: str, params: tuple = ()) -> list[dict[str, Any]]:
         """Execute a SELECT query and return all rows as dicts."""
         with self.connect() as conn:
@@ -43,3 +43,7 @@ class SQLiteDatabase(DBBase):
         values = tuple(data.values()) + params
         query = f"UPDATE {table} SET {set_clause} WHERE {where}"
         self.execute(query, values)
+        
+    def delete(self, table: str, where: str, params: tuple = ()) -> None:
+        query = f"DELETE FROM {table} WHERE {where}"
+        return self.execute(query, params)

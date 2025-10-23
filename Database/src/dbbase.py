@@ -53,6 +53,11 @@ class DBBase(ABC):
         """Update rows in the given table matching the WHERE condition."""
         pass
 
+    @abstractmethod
+    def delete(self, table: str, where: str, params: tuple = ()) -> None:
+        """Delete rows in the given table matching the WHERE condition."""
+        pass
+    
     def __enter__(self):
         """Optional: for use in `with` statements."""
         self.conn = self.connect()

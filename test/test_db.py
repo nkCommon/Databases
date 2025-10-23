@@ -12,7 +12,9 @@ class TestPostgreSQL(unittest.TestCase):
     def tearDown(self):
         # Teardown code: clean up resources
         # Example: del self.invoice
-        pass
+        db = self._make_db()
+        db.execute("DELETE FROM tst.test;")
+        
     def _make_db(self):
         db = DatabaseFactory.create(
             db_type=DatabaseType.POSTGRESQL,
@@ -71,14 +73,75 @@ class TestPostgreSQL(unittest.TestCase):
 
     # *************************************************************************************************************
     def test_delete(self):
-        self.assertTrue(False)
+        db = self._make_db()
+        timestamp = "2024-01-01 12:00:00"
+        result = db.execute(f"INSERT INTO tst.test (id, name, value, state, updated) VALUES ('1', '1Name', '1Value', 0, '{timestamp}');")
+        self.assertTrue(result["success"])
+        result = db.execute(f"INSERT INTO tst.test (id, name, value, state, updated) VALUES ('2', '2Name', '2Value', 0, '{timestamp}');")
+        self.assertTrue(result["success"])
+        result = db.execute(f"INSERT INTO tst.test (id, name, value, state, updated) VALUES ('3', '3Name', '3Value', 1, '{timestamp}');")
+        self.assertTrue(result["success"])
+        result = db.execute(f"INSERT INTO tst.test (id, name, value, state, updated) VALUES ('4', '4Name', '4Value', 2, '{timestamp}');")
+        self.assertTrue(result["success"])
+        
+        result = db.select("SELECT * FROM tst.test WHERE state = %s;", (0,))
+        self.assertEqual(len(result), 2)
+        result = db.execute("DELETE FROM tst.test WHERE state = %s;", (0,))
+        self.assertTrue(result["success"])
+        result = db.select("SELECT * FROM tst.test WHERE state = %s;", (0,))
+        self.assertEqual(len(result), 0)
+        
+
+        result = db.select("SELECT * FROM tst.test WHERE state = %s;", (1,))
+        self.assertEqual(len(result), 1)
+        result = db.delete("tst.test", "state = %s", (1,))
+        self.assertTrue(result["success"])
+        result = db.select("SELECT * FROM tst.test WHERE state = %s;", (1,))
+        self.assertEqual(len(result), 0)
+        
+        result = db.select("SELECT * FROM tst.test WHERE state = %s;", (2,))
+        self.assertEqual(len(result), 1)
+        result = db.delete("tst.test", "state = %s", (2,))
+        self.assertTrue(result["success"])
+        result = db.select("SELECT * FROM tst.test WHERE state = %s;", (2,))
+        self.assertEqual(len(result), 0)
+                
+        
     # *************************************************************************************************************
     def test_select(self):
-        self.assertTrue(False)
+        db = self._make_db()
+        timestamp = "2024-01-01 12:00:00"
+        result = db.execute(f"INSERT INTO tst.test (id, name, value, state, updated) VALUES ('1', '1Name', '1Value', 0, '{timestamp}');")
+        self.assertTrue(result["success"])
+        result = db.execute(f"INSERT INTO tst.test (id, name, value, state, updated) VALUES ('2', '2Name', '2Value', 0, '{timestamp}');")
+        self.assertTrue(result["success"])
+        result = db.execute(f"INSERT INTO tst.test (id, name, value, state, updated) VALUES ('3', '3Name', '3Value', 1, '{timestamp}');")
+        self.assertTrue(result["success"])
+        result = db.execute(f"INSERT INTO tst.test (id, name, value, state, updated) VALUES ('4', '4Name', '4Value', 2, '{timestamp}');")
+        self.assertTrue(result["success"])
+
+        result = db.select("SELECT * FROM tst.test;")
+        self.assertEqual(len(result), 4)
+        
+        result = db.select("SELECT * FROM tst.test WHERE state = %s;", (0,))
+        self.assertEqual(len(result), 2)
+        
+        result = db.select("SELECT * FROM tst.test WHERE state = %s;", (1,))
+        self.assertEqual(len(result), 1)
+        
+        result = db.select("SELECT * FROM tst.test WHERE state = %s;", (2,))
+        self.assertEqual(len(result), 1)
+
     # *************************************************************************************************************
 
 ########################################################################################################################
+########################################################################################################################
+########################################################################################################################
+########################################################################################################################
 ### Tests for SQL Server
+########################################################################################################################
+########################################################################################################################
+########################################################################################################################
 ########################################################################################################################
 
 class TesSQLServer(unittest.TestCase):
@@ -88,7 +151,9 @@ class TesSQLServer(unittest.TestCase):
     def tearDown(self):
         # Teardown code: clean up resources
         # Example: del self.invoice
-        pass
+        db = self._make_db()
+        db.execute("DELETE dbo.test;")
+
     def _make_db(self):
         db = DatabaseFactory.create(
             db_type=DatabaseType.MSSQL,
@@ -150,10 +215,63 @@ class TesSQLServer(unittest.TestCase):
         
     # *************************************************************************************************************
     def test_delete(self):
-        self.assertTrue(False)
+        db = self._make_db()
+        timestamp = "2024-01-01 12:00:00"
+        result = db.execute(f"INSERT INTO dbo.test (id, name, value, state, updated) VALUES ('1', '1Name', '1Value', 0, '{timestamp}');")
+        self.assertTrue(result["success"])
+        result = db.execute(f"INSERT INTO dbo.test (id, name, value, state, updated) VALUES ('2', '2Name', '2Value', 0, '{timestamp}');")
+        self.assertTrue(result["success"])
+        result = db.execute(f"INSERT INTO dbo.test (id, name, value, state, updated) VALUES ('3', '3Name', '3Value', 1, '{timestamp}');")
+        self.assertTrue(result["success"])
+        result = db.execute(f"INSERT INTO dbo.test (id, name, value, state, updated) VALUES ('4', '4Name', '4Value', 2, '{timestamp}');")
+        self.assertTrue(result["success"])
+        
+        result = db.select("SELECT * FROM dbo.test WHERE state = %s;", (0,))
+        self.assertEqual(len(result), 2)
+        result = db.execute("DELETE FROM dbo.test WHERE state = %s;", (0,))
+        self.assertTrue(result["success"])
+        result = db.select("SELECT * FROM dbo.test WHERE state = %s;", (0,))
+        self.assertEqual(len(result), 0)
+        
+
+        result = db.select("SELECT * FROM dbo.test WHERE state = %s;", (1,))
+        self.assertEqual(len(result), 1)
+        result = db.delete("dbo.test", "state = %s", (1,))
+        self.assertTrue(result["success"])
+        result = db.select("SELECT * FROM dbo.test WHERE state = %s;", (1,))
+        self.assertEqual(len(result), 0)
+        
+        result = db.select("SELECT * FROM dbo.test WHERE state = %s;", (2,))
+        self.assertEqual(len(result), 1)
+        result = db.delete("dbo.test", "state = %s", (2,))
+        self.assertTrue(result["success"])
+        result = db.select("SELECT * FROM dbo.test WHERE state = %s;", (2,))
+        self.assertEqual(len(result), 0)
+
     # *************************************************************************************************************
     def test_select(self):
-        self.assertTrue(False)
+        db = self._make_db()
+        timestamp = "2024-01-01 12:00:00"
+        result = db.execute(f"INSERT INTO dbo.test (id, name, value, state, updated) VALUES ('1', '1Name', '1Value', 0, '{timestamp}');")
+        self.assertTrue(result["success"])
+        result = db.execute(f"INSERT INTO dbo.test (id, name, value, state, updated) VALUES ('2', '2Name', '2Value', 0, '{timestamp}');")
+        self.assertTrue(result["success"])
+        result = db.execute(f"INSERT INTO dbo.test (id, name, value, state, updated) VALUES ('3', '3Name', '3Value', 1, '{timestamp}');")
+        self.assertTrue(result["success"])
+        result = db.execute(f"INSERT INTO dbo.test (id, name, value, state, updated) VALUES ('4', '4Name', '4Value', 2, '{timestamp}');")
+        self.assertTrue(result["success"])
+        
+        result = db.select("SELECT * FROM dbo.test;")
+        self.assertEqual(len(result), 4)
+        
+        result = db.select("SELECT * FROM dbo.test WHERE state = %s;", (0,))
+        self.assertEqual(len(result), 2)
+        
+        result = db.select("SELECT * FROM dbo.test WHERE state = %s;", (1,))
+        self.assertEqual(len(result), 1)
+        
+        result = db.select("SELECT * FROM dbo.test WHERE state = %s;", (2,))
+        self.assertEqual(len(result), 1)
     # *************************************************************************************************************
 
 

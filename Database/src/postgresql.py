@@ -34,14 +34,12 @@ class PostgreSQLDatabase(DBBase):
         )
 
     def select(self, query: str, params: tuple = ()) -> list[dict[str, Any]]:
-        """Run a SELECT query and return results as list of dicts."""
         with self.connect() as conn:
             with conn.cursor() as cur:
                 cur.execute(query, params)
                 return cur.fetchall()
             
     def execute(self, query: str, params: tuple = ()) -> None:
-        """Run INSERT, UPDATE, or DELETE queries."""
         try:
             with self.connect() as conn:
                 with conn.cursor() as cur:
@@ -52,7 +50,6 @@ class PostgreSQLDatabase(DBBase):
             return {"success": False, "rows_affected": 0, "error": str(e)}
             
     def insert(self, table: str, data: dict[str, Any]) -> None:
-        """Insert a row using a dictionary of column-value pairs."""
         columns = ", ".join(data.keys())
         placeholders = ", ".join(["%s"] * len(data))
         values = tuple(data.values())
@@ -61,9 +58,12 @@ class PostgreSQLDatabase(DBBase):
         return self.execute(query, values)
 
     def update(self, table: str, data: dict[str, Any], where: str, params: tuple = ()) -> None:
-        """Update rows with provided data and WHERE condition."""
         set_clause = ", ".join([f"{col} = %s" for col in data.keys()])
         values = tuple(data.values()) + params
 
         query = f"UPDATE {table} SET {set_clause} WHERE {where}"
         return self.execute(query, values)
+
+    def delete(self, table: str, where: str, params: tuple = ()) -> None:
+        query = f"DELETE FROM {table} WHERE {where}"
+        return self.execute(query, params)
