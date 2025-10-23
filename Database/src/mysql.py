@@ -26,6 +26,31 @@ class MySQLDatabase(DBBase):
             cur.execute(query, params)
             return cur.fetchall()
 
+    def select_where(
+            self,
+            query_or_table: str,
+            columns: list[str] | None = None,
+            where: str | None = None,
+            params: tuple = ()
+        ) -> list[dict[str, Any]]:
+            """
+            Execute a SELECT query.
+            - If `columns` or `where` are provided, builds a query automatically.
+            - Otherwise, treats the first argument as a raw SQL string.
+            """
+            with self.connect() as conn:
+                cur = conn.cursor(dictionary=True)
+                if columns is not None or where is not None:
+                    col_str = ", ".join(columns) if columns else "*"
+                    query = f"SELECT {col_str} FROM {query_or_table}"
+                    if where:
+                        query += f" WHERE {where}"
+                else:
+                    query = query_or_table
+
+                cur.execute(query, params)
+                return cur.fetchall()
+
     def execute(self, query: str, params: tuple = ()) -> None:
         """Execute INSERT/UPDATE/DELETE and commit."""
         with self.connect() as conn:

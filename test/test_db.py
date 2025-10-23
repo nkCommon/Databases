@@ -132,6 +132,19 @@ class TestPostgreSQL(unittest.TestCase):
         result = db.select("SELECT * FROM tst.test WHERE state = %s;", (2,))
         self.assertEqual(len(result), 1)
 
+        result = db.select_where(
+            query_or_table="tst.test",
+            columns=["id", "name"],
+            where="state = %s",
+            params=(0,)
+        )
+        self.assertEqual(len(result), 2)
+        for row in result:
+            self.assertIn("id", row)
+            self.assertIn("name", row)
+            self.assertNotIn("value", row)
+            self.assertNotIn("state", row)
+            self.assertNotIn("updated", row)
     # *************************************************************************************************************
 
 ########################################################################################################################
@@ -272,6 +285,21 @@ class TesSQLServer(unittest.TestCase):
         
         result = db.select("SELECT * FROM dbo.test WHERE state = %s;", (2,))
         self.assertEqual(len(result), 1)
+        
+        result = db.select_where(
+            query_or_table="dbo.test",
+            columns=["id", "name"],
+            where="state = %s",
+            params=(0,)
+        )
+        self.assertEqual(len(result), 2)
+        for row in result:
+            self.assertIn("id", row)
+            self.assertIn("name", row)
+            self.assertNotIn("value", row)
+            self.assertNotIn("state", row)
+            self.assertNotIn("updated", row)
+            
     # *************************************************************************************************************
 
 

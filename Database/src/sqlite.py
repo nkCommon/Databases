@@ -24,6 +24,29 @@ class SQLiteDatabase(DBBase):
             rows = cur.fetchall()
             return [dict(row) for row in rows]
 
+    def select_where(
+        self,
+        query_or_table: str,
+        columns: list[str] | None = None,
+        where: str | None = None,
+        params: tuple = ()
+    ) -> list[dict[str, Any]]:
+        with self.connect() as conn:
+            cur = conn.cursor()
+            if columns is not None or where is not None:
+                col_str = ", ".join(columns) if columns else "*"
+                query = f"SELECT {col_str} FROM {query_or_table}"
+                if where:
+                    query += f" WHERE {where}"
+            else:
+                query = query_or_table
+
+            cur.execute(query, params)
+            rows = cur.fetchall()
+            return [dict(row) for row in rows]
+
+
+
     def execute(self, query: str, params: tuple = ()) -> None:
         """Execute INSERT/UPDATE/DELETE."""
         with self.connect() as conn:

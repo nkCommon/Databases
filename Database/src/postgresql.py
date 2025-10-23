@@ -38,6 +38,28 @@ class PostgreSQLDatabase(DBBase):
             with conn.cursor() as cur:
                 cur.execute(query, params)
                 return cur.fetchall()
+
+    def select_where(
+        self,
+        query_or_table: str,
+        columns: list[str] | None = None,
+        where: str | None = None,
+        params: tuple = ()
+    ) -> list[dict[str, Any]]:
+        """Execute SELECT from raw SQL or from table name + filters."""
+        with self.connect() as conn:
+            with conn.cursor() as cur:
+                if columns is not None or where is not None:
+                    col_str = ", ".join(columns) if columns else "*"
+                    query = f"SELECT {col_str} FROM {query_or_table}"
+                    if where:
+                        query += f" WHERE {where}"
+                else:
+                    # treat first argument as a raw SQL query
+                    query = query_or_table
+
+                cur.execute(query, params)
+                return cur.fetchall()            
             
     def execute(self, query: str, params: tuple = ()) -> None:
         try:
