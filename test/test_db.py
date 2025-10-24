@@ -305,3 +305,26 @@ class TesSQLServer(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+    
+    
+# -- Table: tst.test
+
+# DROP TABLE IF EXISTS tst.test;
+
+# CREATE TABLE IF NOT EXISTS tst.test
+# (
+#     id character varying(40) COLLATE pg_catalog."default",
+#     name character varying(40) COLLATE pg_catalog."default",
+#     value character varying(100) COLLATE pg_catalog."default",
+#     state integer,
+#     updated character varying(40) COLLATE pg_catalog."default"
+# )
+
+# TABLESPACE pg_default;
+
+# ALTER TABLE IF EXISTS tst.test
+#     OWNER to lakas;
+
+# GRANT ALL ON TABLE tst.test TO lakas;
+
+# GRANT ALL ON TABLE tst.test TO testuser;
