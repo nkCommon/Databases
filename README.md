@@ -33,7 +33,8 @@ uv sync
 
 2. importer database factory and types:
 ```python
-from Database.src.dbfactory import DBFactory, DatabaseType
+from Database.src.dbbase import DatabaseType
+from Database.src.dbfactory import DatabaseFactory
 ```
 3. Opret .env fil
 ```bash
@@ -91,7 +92,8 @@ PASSWORD="***********"
 
 ## Eksempel kode
 ```python
-from Database.src.dbfactory import DatabaseFactory, DatabaseType
+from Database.src.dbbase import DatabaseType
+from Database.src.dbfactory import DatabaseFactory
 import os
 from dotenv import load_dotenv
 
