@@ -126,6 +126,9 @@ class DBBase(ABC):
             "errors": errors,
         }
         print("[DEBUG] insert_dataframe result:", result)
+        
+        self.conn.commit()
+        
         return result
 
     # def insert_dataframe(self, table: str, df, batch_size: int = 1000) -> int:
