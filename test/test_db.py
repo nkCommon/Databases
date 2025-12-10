@@ -1,6 +1,7 @@
 import unittest
 #from Database.src.dbbase import DBBase
 from Database.src.dbfactory import DatabaseFactory, DatabaseType
+import pandas as pd
 ########################################################################################################################
 ### Tests for PostgreSQL
 ########################################################################################################################
@@ -54,6 +55,21 @@ class TestPostgreSQL(unittest.TestCase):
             "updated": timestamp
         })
         self.assertTrue(result["success"])
+        
+        df = pd.DataFrame({
+            "id": ["1", "2", "3", "4"],
+            "name": ["TestName", "Name", "TestName", "Name"],
+            "value": ["TestValue", "Value", "TestValue", "Value"],
+            "state": [0, 0, 1, 2],
+            "updated": [timestamp, timestamp, timestamp, timestamp]
+        })
+        result = db.insert_dataframe("tst.test", df)
+        self.assertEqual(result, 4)
+        
+
+        
+        
+        
     # *************************************************************************************************************
     def test_update(self):
         db = self._make_db()

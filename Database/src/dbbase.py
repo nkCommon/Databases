@@ -69,3 +69,35 @@ class DBBase(ABC):
         """Ensure connection is closed."""
         if hasattr(self, "conn") and self.conn:
             self.conn.close()
+            
+    def insert_dataframe(self, table: str, df, batch_size: int = 1000) -> int:
+        """
+        Insert all rows from a (pandas) DataFrame into the given table.
+
+        Args:
+            table: Target table name.
+            df: A pandas.DataFrame (or similar with .to_dict(orient="records")).
+            batch_size: How many rows to insert per chunk (still per-row insert,
+                        but lets you hook in batching later if you want).
+
+        Returns:
+            Total number of rows inserted.
+        """
+        try:
+            import pandas as pd  # type: ignore
+        except ImportError as e:
+            raise RuntimeError("pandas is required for insert_dataframe") from e
+
+        if not isinstance(df, pd.DataFrame):
+            raise TypeError(f"insert_dataframe expects a pandas DataFrame, got: {type(df)}")
+
+        total = 0
+        # simple chunking to avoid huge loops, but still calls self.insert per row
+        for start in range(0, len(df), batch_size):
+            chunk = df.iloc[start:start + batch_size]
+            records = chunk.to_dict(orient="records")
+            for row in records:
+                # row is dict: {column_name: value}
+                self.insert(table, row)
+            total += len(records)
+        return total
