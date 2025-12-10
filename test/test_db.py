@@ -64,7 +64,10 @@ class TestPostgreSQL(unittest.TestCase):
             "updated": [timestamp, timestamp, timestamp, timestamp]
         })
         result = db.insert_dataframe("tst.test", df)
-        self.assertEqual(result, 4)
+        self.assertEqual(result.attempted, 4)
+        self.assertEqual(result.succeeded, 4)
+        self.assertEqual(result.failed, 0)
+        self.assertEqual(result.errors, [])
         
 
         
