@@ -81,64 +81,51 @@ class DBBase(ABC):
             
 
 
+
     def insert_dataframe(
-            self,
-            table: str,
-            df,
-            batch_size: int = 1000,
-            raise_on_error: bool = False,
-        ) -> DataFrameInsertResult:
+        self,
+        table: str,
+        df: pd.DataFrame,
+        raise_on_error: bool = True,
+    ) -> dict[str, Any]:
         """
         Insert all rows from a pandas DataFrame into the given table.
 
-        Args:
-            table: Target table name.
-            df: pandas.DataFrame.
-            batch_size: Process rows in chunks.
-            raise_on_error: If True, stop at first failing row and raise.
-                            If False, continue and collect errors.
-
-        Returns:
-            DataFrameInsertResult with attempted/succeeded/failed counts.
+        Returns a dict with attempted/succeeded/failed and errors.
         """
-        try:
-            import pandas as pd  # type: ignore
-        except ImportError as e:
-            raise RuntimeError("pandas is required for insert_dataframe") from e
-
         if not isinstance(df, pd.DataFrame):
-            raise TypeError(f"insert_dataframe expects a pandas DataFrame, got: {type(df)}")
+            raise TypeError(f"insert_dataframe expects a pandas DataFrame, got {type(df)}")
 
         attempted = 0
         succeeded = 0
         errors: list[tuple[int, Exception]] = []
 
-        for start in range(0, len(df), batch_size):
-            chunk = df.iloc[start:start + batch_size]
-            records = chunk.to_dict(orient="records")
+        for idx, row in df.iterrows():
+            attempted += 1
+            row_dict = row.to_dict()
 
-            for offset, row in enumerate(records):
-                idx = start + offset  # original row index in df
-                attempted += 1
-                try:
-                    self.insert(table, row)  # this calls the DB-specific insert()
-                    succeeded += 1
-                except Exception as e:
-                    errors.append((idx, e))
-                    if raise_on_error:
-                        # Optionally raise with context
-                        raise RuntimeError(
-                            f"Failed to insert row at index {idx}: {e}"
-                        ) from e
+            print(f"[DEBUG] Inserting row {idx}: {row_dict}")  # debug
+
+            try:
+                # this calls your DB-specific insert()
+                self.insert(table, row_dict)
+                succeeded += 1
+            except Exception as e:
+                print(f"[DEBUG] ERROR inserting row {idx} into {table}: {e!r}")
+                errors.append((idx, e))
+                if raise_on_error:
+                    # re-raise so your caller sees the failure
+                    raise
 
         failed = attempted - succeeded
-        return DataFrameInsertResult(
-            attempted=attempted,
-            succeeded=succeeded,
-            failed=failed,
-            errors=errors,
-        )
-
+        result = {
+            "attempted": attempted,
+            "succeeded": succeeded,
+            "failed": failed,
+            "errors": errors,
+        }
+        print("[DEBUG] insert_dataframe result:", result)
+        return result
 
     # def insert_dataframe(self, table: str, df, batch_size: int = 1000) -> int:
     #     """
