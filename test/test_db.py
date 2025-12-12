@@ -1,6 +1,7 @@
 import unittest
 #from Database.src.dbbase import DBBase
 from Database.src.dbfactory import DatabaseFactory, DatabaseType
+from datetime import datetime
 import pandas as pd
 ########################################################################################################################
 ### Tests for PostgreSQL
@@ -56,6 +57,12 @@ class TestPostgreSQL(unittest.TestCase):
         })
         self.assertTrue(result["success"])
         
+        
+
+    def test_insert_dataframe(self):
+        db = self._make_db()
+        timestamp = "2024-01-01"
+        
         df = pd.DataFrame({
             "id": ["1", "2", "3", "4"],
             "name": ["TestName", "Name", "TestName", "Name"],
@@ -64,11 +71,44 @@ class TestPostgreSQL(unittest.TestCase):
             "updated": [timestamp, timestamp, timestamp, timestamp]
         })
         result = db.insert_dataframe("tst.test", df)
-        self.assertEqual(result.attempted, 4)
-        self.assertEqual(result.succeeded, 4)
-        self.assertEqual(result.failed, 0)
-        self.assertEqual(result.errors, [])
         
+        self.assertEqual(result['attempted'], 4)
+        self.assertEqual(result['succeeded'], 4)
+        self.assertEqual(result['failed'], 0)
+        self.assertEqual(result['errors'], [])
+        
+        headers=['Point','TimeOfCreation','DeliveryID','AccountNumber','BookingDate','ValueDate','CurrencyCode','BookedAmount','CurrencyCodeOrigin','BookedAmountOrigin','ShortAdvice','Technical','StartingBalance','Balance','ExtendedAdvice1','ExtendedAdvice2','ExtendedAdvice3','ExtendedAdvice4','ExtendedAdvice5','ExtendedAdvice6','ExtendedAdvice7','ExtendedAdvice8','ExtendedAdvice9','ExtendedAdvice10','ExtendedAdvice11','ExtendedAdvice12','ExtendedAdvice13','ExtendedAdvice14','ExtendedAdvice15','ExtendedAdvice16','ExtendedAdvice17','ExtendedAdvice18','ExtendedAdvice19','ExtendedAdvice20','ExtendedAdvice21','ExtendedAdvice22','ExtendedAdvice23','ExtendedAdvice24','ExtendedAdvice25','ExtendedAdvice26','ExtendedAdvice27','ExtendedAdvice28','ExtendedAdvice29','ExtendedAdvice30','ExtendedAdvice31','ExtendedAdvice32','ExtendedAdvice33','ExtendedAdvice34','ExtendedAdvice35','ExtendedAdvice36','ExtendedAdvice37','ExtendedAdvice38','ExtendedAdvice39','ExtendedAdvice40','ExtendedAdvice41','ExtendedAdvice42','ExtendedAdvice43','ExtendedAdvice44','ExtendedAdvice45','ExtendedAdvice46','ExtendedAdvice47','ExtendedAdvice48','ExtendedAdvice49']
+        headers = [h.lower() for h in headers]
+        
+        additional_values = {"status":"new", "logmessage":"imported", "updatedbyrobot":False, "invoicenumber":"-"}
+        
+        df = pd.read_csv(
+            '/Users/lakas/git/Databases/test/BETALINGSOB_12764170_251209U003',
+            delimiter=',',
+            encoding="cp1252",
+            names=headers,    
+            dtype={"bookingdate": str, "valuedate": str, "bookedamount": float},
+            header=None,
+            keep_default_na=False
+        )
+        for row in df.itertuples():
+            print(f"Row: {row.bookingdate}, {row.bookedamount}, {row.shortadvice}")
+        account_number = df['accountnumber'].iloc[0]
+        short_advice = df['shortadvice'].iloc[0]
+        booking_date = df['bookingdate'].iloc[0]
+        booked_amaount = df['bookedamount'].iloc[0]
+        print(f"Account: {account_number}, Advice: {short_advice}, Date: {booking_date}, Amount: {booked_amaount}")
+        
+        
+        additional_values = {"status":"new", "logmessage":"imported", "updatedbyrobot":datetime.now(), "invoicenumber":"-"}
+        for key, value in additional_values.items():
+            df[key] = value
+        
+        
+        result = db.insert_dataframe("tst.konto", df)
+
+        self.assertEqual(result['failed'], 0)
+        self.assertEqual(result['errors'], [])
 
         
         

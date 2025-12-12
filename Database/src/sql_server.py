@@ -75,3 +75,41 @@ class MSSQLDatabase(DBBase):
     def delete(self, table: str, where: str, params: tuple = ()) -> None:
         query = f"DELETE FROM {table} WHERE {where}"
         return self.execute(query, params)
+    
+    def get_table_schema(self, table: str) -> dict[str, str]:
+        """
+        Return {column_name: data_type} for a SQL Server table.
+
+        Accepts:
+          - "schema.table"
+          - "table" (defaults schema to dbo)
+        """
+        if "." in table:
+            schema_name, table_name = table.split(".", 1)
+        else:
+            schema_name, table_name = "dbo", table
+
+        query = """
+        SELECT
+            c.COLUMN_NAME AS column_name,
+            c.DATA_TYPE AS data_type
+        FROM INFORMATION_SCHEMA.COLUMNS c
+        WHERE c.TABLE_SCHEMA = %s
+          AND c.TABLE_NAME = %s
+        ORDER BY c.ORDINAL_POSITION
+        """
+
+        with self.connect() as conn:
+            with conn.cursor() as cur:
+                cur.execute(query, (schema_name, table_name))
+                rows = cur.fetchall()
+
+        # pytds with as_dict=True returns dict rows:
+        # {"column_name": "...", "data_type": "..."}
+        schema_map: dict[str, str] = {}
+        for r in rows:
+            if isinstance(r, dict):
+                schema_map[r["column_name"]] = r["data_type"]
+            else:
+                schema_map[r[0]] = r[1]
+        return schema_map

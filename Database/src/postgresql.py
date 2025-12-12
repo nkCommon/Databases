@@ -89,3 +89,22 @@ class PostgreSQLDatabase(DBBase):
     def delete(self, table: str, where: str, params: tuple = ()) -> None:
         query = f"DELETE FROM {table} WHERE {where}"
         return self.execute(query, params)
+    
+    def get_table_schema(self, table: str) -> dict[str, str]:
+        schema, table_name = table.split(".", 1)
+
+        query = """
+        SELECT column_name, data_type
+        FROM information_schema.columns
+        WHERE table_schema = %s
+        AND table_name = %s
+        ORDER BY ordinal_position
+        """
+
+        with self.connect() as conn:
+            with conn.cursor() as cur:
+                cur.execute(query, (schema, table_name))
+                rows = cur.fetchall()
+
+        # rows are dicts because of dict_row row_factory
+        return {r["column_name"]: r["data_type"] for r in rows}

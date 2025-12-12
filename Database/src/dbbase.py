@@ -2,6 +2,9 @@ from abc import ABC, abstractmethod
 from typing import Any, Sequence
 from enum import Enum
 from dataclasses import dataclass
+import math
+from datetime import datetime, date
+
 import pandas as pd
 
 @dataclass
@@ -42,7 +45,6 @@ class DBBase(ABC):
     def connect(self):
         """Return a live database connection."""
         pass
-
     @abstractmethod
     def select(self, query: str, params: tuple = ()) -> list[dict[str, Any]]:
         """Execute a SELECT query and return rows."""
@@ -54,69 +56,120 @@ class DBBase(ABC):
     def execute(self, query: str, params: tuple = ()) -> None:
         """Execute an INSERT, UPDATE, or DELETE query."""
         pass
-
     @abstractmethod
     def insert(self, table: str, data: dict[str, Any]) -> None:
         """Insert a row into the given table."""
         pass
-
     @abstractmethod
     def update(self, table: str, data: dict[str, Any], where: str, params: tuple = ()) -> None:
         """Update rows in the given table matching the WHERE condition."""
         pass
-
     @abstractmethod
     def delete(self, table: str, where: str, params: tuple = ()) -> None:
         """Delete rows in the given table matching the WHERE condition."""
         pass
-    
+    @abstractmethod
+    def get_table_schema(self, table: str) -> dict[str, str]:
+        """
+        Returns: {column_name: data_type}
+        Example: {"timeofcreation": "timestamp", "accountnumber": "integer"}
+        """
+        pass
+    ### Private helper methods ###
     def __enter__(self):
         """Optional: for use in `with` statements."""
         self.conn = self.connect()
         return self
-
     def __exit__(self, exc_type, exc_value, traceback):
         """Ensure connection is closed."""
         if hasattr(self, "conn") and self.conn:
             self.conn.close()
-            
+    ## Utility methods ##
+    def normalize_value(self, value: Any, pg_type: str) -> Any:
+        if value is None:
+            return None
 
+        # pandas NaN → SQL NULL
+        if isinstance(value, float) and math.isnan(value):
+            return None
 
+        t = pg_type.lower()
 
-    def insert_dataframe(
-        self,
-        table: str,
-        df: pd.DataFrame,
-        raise_on_error: bool = True,
-    ) -> dict[str, Any]:
-        """
-        Insert all rows from a pandas DataFrame into the given table.
+        if "timestamp" in t:
+            if isinstance(value, (int, str)):
+                s = str(value)
+                if len(s) == 10 and s.isdigit():  # YYMMDDHHMM
+                    return datetime(
+                        2000 + int(s[:2]),
+                        int(s[2:4]),
+                        int(s[4:6]),
+                        int(s[6:8]),
+                        int(s[8:10]),
+                    )
+            if isinstance(value, datetime):
+                return value
 
-        Returns a dict with attempted/succeeded/failed and errors.
-        """
-        if not isinstance(df, pd.DataFrame):
-            raise TypeError(f"insert_dataframe expects a pandas DataFrame, got {type(df)}")
+        if t == "date":
+            if isinstance(value, str) and len(value) == 6:
+                return date(
+                    2000 + int(value[4:6]),
+                    int(value[2:4]),
+                    int(value[0:2]),
+                )
 
+        if "int" in t:
+            return int(value)
+
+        if "double" in t or "numeric" in t:
+            if isinstance(value, str) and value.strip() == "":
+                return float('0')
+            return float(value)
+
+        # varchar / text / default
+        return str(value)    
+
+    def parse_timeofcreation(self,v) -> datetime | None:
+        if v is None:
+            return None
+        s = str(v).strip()
+        if not s:
+            return None
+
+        # Expect YYMMDDHHMM (10 digits)
+        # e.g. 2512090506 -> 2025-12-09 05:06
+        if len(s) == 10 and s.isdigit():
+            yy = int(s[0:2])
+            year = 2000 + yy
+            month = int(s[2:4])
+            day = int(s[4:6])
+            hour = int(s[6:8])
+            minute = int(s[8:10])
+            return datetime(year, month, day, hour, minute)
+
+        raise ValueError(f"Unsupported TimeOfCreation format: {v!r}")
+
+    def insert_dataframe(self, table: str, df) -> dict[str, Any]:
+        schema = self.get_table_schema(table)
         attempted = 0
         succeeded = 0
         errors: list[tuple[int, Exception]] = []
-
-        for idx, row in df.iterrows():
+        idx=1
+        for _, row in df.iterrows():
             attempted += 1
-            row_dict = row.to_dict()
+            raw = row.to_dict()
+            cleaned = {}
 
-            print(f"[DEBUG] Inserting row {idx}: {row_dict}")  # debug
+            for col, col_type in schema.items():
+                if col in raw:
+                    cleaned_value = self.normalize_value(raw[col], col_type)
+                    cleaned[col] = cleaned_value
 
-            try:
-                # this calls your DB-specific insert()
-                self.insert(table, row_dict)
+            insert_result = self.insert(table, cleaned)
+            if insert_result.get("success"):
                 succeeded += 1
-            except Exception as e:
-                print(f"[DEBUG] ERROR inserting row {idx} into {table}: {e!r}")
-                errors.append((idx, e))
-                if raise_on_error:
-                    # re-raise so your caller sees the failure
-                    raise
+            else:
+                errors.append((idx, Exception(insert_result.get("error"))))
+            idx +=1
 
         failed = attempted - succeeded
         result = {
@@ -125,40 +178,52 @@ class DBBase(ABC):
             "failed": failed,
             "errors": errors,
         }
-        print("[DEBUG] insert_dataframe result:", result)
-        
-        self.conn.commit()
         
         return result
+            
+#     def insert_dataframe(
+#         self,
+#         table: str,
+#         df: pd.DataFrame,
+#         raise_on_error: bool = True,
+#     ) -> dict[str, Any]:
+#         """
+#         Insert all rows from a pandas DataFrame into the given table.
 
-    # def insert_dataframe(self, table: str, df, batch_size: int = 1000) -> int:
-    #     """
-    #     Insert all rows from a (pandas) DataFrame into the given table.
+#         Returns a dict with attempted/succeeded/failed and errors.
+#         """
+#         if not isinstance(df, pd.DataFrame):
+#             raise TypeError(f"insert_dataframe expects a pandas DataFrame, got {type(df)}")
 
-    #     Args:
-    #         table: Target table name.
-    #         df: A pandas.DataFrame (or similar with .to_dict(orient="records")).
-    #         batch_size: How many rows to insert per chunk (still per-row insert,
-    #                     but lets you hook in batching later if you want).
+#         attempted = 0
+#         succeeded = 0
+#         errors: list[tuple[int, Exception]] = []
 
-    #     Returns:
-    #         Total number of rows inserted.
-    #     """
-    #     try:
-    #         import pandas as pd  # type: ignore
-    #     except ImportError as e:
-    #         raise RuntimeError("pandas is required for insert_dataframe") from e
+#         for idx, row in df.iterrows():
+#             attempted += 1
+#             row_dict = row.to_dict()
 
-    #     if not isinstance(df, pd.DataFrame):
-    #         raise TypeError(f"insert_dataframe expects a pandas DataFrame, got: {type(df)}")
+#             # print(f"[DEBUG] Inserting row {idx}: {row_dict}")  # debug
 
-    #     total = 0
-    #     # simple chunking to avoid huge loops, but still calls self.insert per row
-    #     for start in range(0, len(df), batch_size):
-    #         chunk = df.iloc[start:start + batch_size]
-    #         records = chunk.to_dict(orient="records")
-    #         for row in records:
-    #             # row is dict: {column_name: value}
-    #             self.insert(table, row)
-    #         total += len(records)
-    #     return total
+#             # this calls your DB-specific insert()
+#             insert_result = self.insert(table, row_dict)
+#             if insert_result.get("success"):
+#                 succeeded += 1
+#             else:
+#                 errors.append((idx, Exception(insert_result.get("error"))))
+# #                raise Exception(insert_result.get("error"))
+
+#         failed = attempted - succeeded
+#         result = {
+#             "attempted": attempted,
+#             "succeeded": succeeded,
+#             "failed": failed,
+#             "errors": errors,
+#         }
+#         # print("[DEBUG] insert_dataframe result:", result)
+        
+#         return result
+
+
+
+
