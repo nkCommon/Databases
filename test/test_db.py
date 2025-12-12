@@ -16,6 +16,7 @@ class TestPostgreSQL(unittest.TestCase):
         # Example: del self.invoice
         db = self._make_db()
         db.execute("DELETE FROM tst.test;")
+        db.execute("DELETE FROM tst.konto;")
         
     def _make_db(self):
         db = DatabaseFactory.create(
