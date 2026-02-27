@@ -62,7 +62,7 @@ class TestPostgreSQL(unittest.TestCase):
         self.assertTrue(result["success"])
         
 
-    def test_insert_dataframe(self):
+    def test_insert_dataframe1(self):
         db = self._make_db()
         timestamp = "2024-01-01"
         
@@ -81,6 +81,9 @@ class TestPostgreSQL(unittest.TestCase):
         self.assertEqual(result['failed'], 0)
         self.assertEqual(result['errors'], [])
         
+    # *************************************************************************************************************
+    def test_insert_dataframe2(self):
+        db = self._make_db()
         headers=['Point','TimeOfCreation','DeliveryID','AccountNumber','BookingDate','ValueDate','CurrencyCode','BookedAmount','CurrencyCodeOrigin','BookedAmountOrigin','ShortAdvice','Technical','StartingBalance','Balance','ExtendedAdvice1','ExtendedAdvice2','ExtendedAdvice3','ExtendedAdvice4','ExtendedAdvice5','ExtendedAdvice6','ExtendedAdvice7','ExtendedAdvice8','ExtendedAdvice9','ExtendedAdvice10','ExtendedAdvice11','ExtendedAdvice12','ExtendedAdvice13','ExtendedAdvice14','ExtendedAdvice15','ExtendedAdvice16','ExtendedAdvice17','ExtendedAdvice18','ExtendedAdvice19','ExtendedAdvice20','ExtendedAdvice21','ExtendedAdvice22','ExtendedAdvice23','ExtendedAdvice24','ExtendedAdvice25','ExtendedAdvice26','ExtendedAdvice27','ExtendedAdvice28','ExtendedAdvice29','ExtendedAdvice30','ExtendedAdvice31','ExtendedAdvice32','ExtendedAdvice33','ExtendedAdvice34','ExtendedAdvice35','ExtendedAdvice36','ExtendedAdvice37','ExtendedAdvice38','ExtendedAdvice39','ExtendedAdvice40','ExtendedAdvice41','ExtendedAdvice42','ExtendedAdvice43','ExtendedAdvice44','ExtendedAdvice45','ExtendedAdvice46','ExtendedAdvice47','ExtendedAdvice48','ExtendedAdvice49']
         headers = [h.lower() for h in headers]
         print(headers)
@@ -109,22 +112,10 @@ class TestPostgreSQL(unittest.TestCase):
             df[key] = value
         
         df["id"] = df.apply(self.make_guid, axis=1)            
-        result = db.insert_dataframe("tst.konto", df, compare_data=True, exclude_columns=["id"])
+        result = db.insert_dataframe("tst.konto", df)
 
         self.assertEqual(result['failed'], 0)
         self.assertEqual(result['errors'], [])
-
-
-        result = db.insert_dataframe("tst.konto", df, compare_data=True, exclude_columns=["id"])
-
-        self.assertEqual(result['failed'], 0)
-        self.assertEqual(result['attempted'], 0)
-
-        self.assertEqual(result['errors'], [])
-
-        
-        
-        
     # *************************************************************************************************************
     def test_update(self):
         db = self._make_db()

@@ -150,15 +150,8 @@ class DBBase(ABC):
 
         raise ValueError(f"Unsupported TimeOfCreation format: {v!r}")
 
-    def insert_dataframe(self, table: str, df: pd.DataFrame, compare_data:bool = False, exclude_columns:list[str] = []) -> dict[str, Any]:
+    def insert_dataframe(self, table: str, df: pd.DataFrame) -> dict[str, Any]:
 
-        ## When hashed data is compared, only insert new rows
-        if compare_data:
-            cleaned_df = self._df_with_hash(table, df, exclude_columns=exclude_columns, keep_non_schema_columns=True)
-            existing_hashes = self.get_existing_hashes(table, cleaned_df["row_hash"].values.tolist())
-            new_rows_df = cleaned_df[~cleaned_df["row_hash"].isin(existing_hashes)]
-            df = new_rows_df
-            
         schema = self.get_table_schema(table)
         attempted = 0
         succeeded = 0
@@ -190,89 +183,89 @@ class DBBase(ABC):
         }
         return result
 
-    def get_existing_hashes(self, table: str, hashes: list[str]) -> set[str]:
-        if not hashes:
-            return set()
+    # def get_existing_hashes(self, table: str, hashes: list[str]) -> set[str]:
+    #     if not hashes:
+    #         return set()
 
 
-        # chunk to avoid too many parameters
-        out: set[str] = set()
-        chunk_size = 500
-        for i in range(0, len(hashes), chunk_size):
-            chunk = hashes[i:i+chunk_size]
+    #     # chunk to avoid too many parameters
+    #     out: set[str] = set()
+    #     chunk_size = 500
+    #     for i in range(0, len(hashes), chunk_size):
+    #         chunk = hashes[i:i+chunk_size]
 
-            placeholders = ",".join(["%s"] * len(chunk))  # change to "?" or ":p1" based on your driver
-            sql = f"SELECT row_hash FROM {table} WHERE row_hash IN ({placeholders})"
+    #         placeholders = ",".join(["%s"] * len(chunk))  # change to "?" or ":p1" based on your driver
+    #         sql = f"SELECT row_hash FROM {table} WHERE row_hash IN ({placeholders})"
 
-            rows = self.select(sql, chunk)  # you need a method that returns rows
-            out.update(r["row_hash"] if isinstance(r, dict) else r[0] for r in rows)
+    #         rows = self.select(sql, chunk)  # you need a method that returns rows
+    #         out.update(r["row_hash"] if isinstance(r, dict) else r[0] for r in rows)
 
-        return out
+    #     return out
     
 
 
 
 
 
-    def _stable_row_hash(self, values: list[Any]) -> str:
-        parts = []
-        for v in values:
-            if v is None or (isinstance(v, float) and pd.isna(v)):
-                parts.append("<NULL>")
-            else:
-                parts.append(str(v))
-        return hashlib.sha256("\x1f".join(parts).encode("utf-8")).hexdigest()
+    # def _stable_row_hash(self, values: list[Any]) -> str:
+    #     parts = []
+    #     for v in values:
+    #         if v is None or (isinstance(v, float) and pd.isna(v)):
+    #             parts.append("<NULL>")
+    #         else:
+    #             parts.append(str(v))
+    #     return hashlib.sha256("\x1f".join(parts).encode("utf-8")).hexdigest()
 
 
-    def _df_with_hash(
-        self,
-        table: str,
-        df: pd.DataFrame,
-        exclude_columns: list[str] | None = None,
-        keep_non_schema_columns: bool = False,
-    ) -> pd.DataFrame:
+    # def _df_with_hash(
+    #     self,
+    #     table: str,
+    #     df: pd.DataFrame,
+    #     exclude_columns: list[str] | None = None,
+    #     keep_non_schema_columns: bool = False,
+    # ) -> pd.DataFrame:
         
-        if "row_hash" not in exclude_columns:
-            exclude_columns.append("row_hash")
+    #     if "row_hash" not in exclude_columns:
+    #         exclude_columns.append("row_hash")
         
         
-        schema = self.get_table_schema(table)
-        exclude_columns = exclude_columns or []
+    #     schema = self.get_table_schema(table)
+    #     exclude_columns = exclude_columns or []
 
-        schema_cols = list(schema.keys())              # all cols we want in output
-        hash_cols = [c for c in schema_cols if c not in exclude_columns]  # cols used for hash
+    #     schema_cols = list(schema.keys())              # all cols we want in output
+    #     hash_cols = [c for c in schema_cols if c not in exclude_columns]  # cols used for hash
 
-        # Normalize into ALL schema columns (even excluded ones)
-        normalized_rows = []
-        for _, row in df.iterrows():
-            raw = row.to_dict()
-            cleaned = {}
-            for col, col_type in schema.items():
-                cleaned[col] = self.normalize_value(raw.get(col), col_type)
-            normalized_rows.append(cleaned)
+    #     # Normalize into ALL schema columns (even excluded ones)
+    #     normalized_rows = []
+    #     for _, row in df.iterrows():
+    #         raw = row.to_dict()
+    #         cleaned = {}
+    #         for col, col_type in schema.items():
+    #             cleaned[col] = self.normalize_value(raw.get(col), col_type)
+    #         normalized_rows.append(cleaned)
 
-        cleaned_df = pd.DataFrame(normalized_rows, columns=schema_cols)
+    #     cleaned_df = pd.DataFrame(normalized_rows, columns=schema_cols)
 
-        # Optionally keep extra columns from original df (not in schema)
-        if keep_non_schema_columns:
-            extra_cols = [c for c in df.columns if c not in cleaned_df.columns]
-            if extra_cols:
-                cleaned_df = pd.concat([cleaned_df, df[extra_cols].reset_index(drop=True)], axis=1)
+    #     # Optionally keep extra columns from original df (not in schema)
+    #     if keep_non_schema_columns:
+    #         extra_cols = [c for c in df.columns if c not in cleaned_df.columns]
+    #         if extra_cols:
+    #             cleaned_df = pd.concat([cleaned_df, df[extra_cols].reset_index(drop=True)], axis=1)
 
-        # Hash uses ONLY hash_cols, but excluded cols still remain in cleaned_df
-        try:
-            # Hash uses ONLY hash_cols, but excluded cols still remain in cleaned_df
-            cleaned_df["row_hash"] = cleaned_df.apply(
-                lambda r: self._stable_row_hash([r[c] for c in hash_cols]),
-                axis=1,
-            )
-        except Exception as e:
-            print(f"Error hashing rows: {e}")
-            print(cleaned_df)
-            print(hash_cols)
-            raise e
+    #     # Hash uses ONLY hash_cols, but excluded cols still remain in cleaned_df
+    #     try:
+    #         # Hash uses ONLY hash_cols, but excluded cols still remain in cleaned_df
+    #         cleaned_df["row_hash"] = cleaned_df.apply(
+    #             lambda r: self._stable_row_hash([r[c] for c in hash_cols]),
+    #             axis=1,
+    #         )
+    #     except Exception as e:
+    #         print(f"Error hashing rows: {e}")
+    #         print(cleaned_df)
+    #         print(hash_cols)
+    #         raise e
 
-        return cleaned_df
+    #     return cleaned_df
 
 
 
