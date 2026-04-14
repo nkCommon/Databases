@@ -2,6 +2,7 @@ import psycopg
 from psycopg.rows import dict_row
 from typing import Any
 from Database.src.dbbase import DBBase
+import pandas as pd
 
 
 class PostgreSQLDatabase(DBBase):
@@ -38,6 +39,14 @@ class PostgreSQLDatabase(DBBase):
             with conn.cursor() as cur:
                 cur.execute(query, params)
                 return cur.fetchall()
+
+    def select_df(self, query: str, params: tuple = ()) -> pd.DataFrame:
+        with self.connect() as conn:
+            with conn.cursor() as cur:
+                cur.execute(query, params)
+                rows = cur.fetchall()
+        return pd.DataFrame(rows)
+
 
     def select_where(
         self,

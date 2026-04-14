@@ -359,6 +359,20 @@ class TesSQLServer(unittest.TestCase):
             self.assertNotIn("state", row)
             self.assertNotIn("updated", row)
             
+    def test_select_dataframe(self):
+        db = self._make_db()
+        timestamp = "2024-01-01 12:00:00"
+        result = db.execute(f"INSERT INTO dbo.test (id, name, value, state, updated) VALUES ('1', '1Name', '1Value', 0, '{timestamp}');")
+        self.assertTrue(result["success"])
+        result = db.execute(f"INSERT INTO dbo.test (id, name, value, state, updated) VALUES ('2', '2Name', '2Value', 0, '{timestamp}');")
+        self.assertTrue(result["success"])
+        result = db.execute(f"INSERT INTO dbo.test (id, name, value, state, updated) VALUES ('3', '3Name', '3Value', 1, '{timestamp}');")
+        self.assertTrue(result["success"])
+        result = db.execute(f"INSERT INTO dbo.test (id, name, value, state, updated) VALUES ('4', '4Name', '4Value', 2, '{timestamp}');")
+        self.assertTrue(result["success"])
+        
+        df = db.select_df("SELECT * FROM dbo.test;")
+        self.assertEqual(len(df), 4)
     # *************************************************************************************************************
 
 

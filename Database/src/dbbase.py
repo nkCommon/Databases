@@ -5,7 +5,6 @@ from dataclasses import dataclass
 import math
 from datetime import datetime, date
 
-import pandas as pd
 import hashlib
 import pandas as pd
 
@@ -50,6 +49,10 @@ class DBBase(ABC):
     @abstractmethod
     def select(self, query: str, params: tuple = ()) -> list[dict[str, Any]]:
         """Execute a SELECT query and return rows."""
+        pass
+    @abstractmethod
+    def select_df(self, query: str, params: tuple = ()) -> pd.DataFrame:
+        """Execute a SELECT query and return a pandas DataFrame."""
         pass
     @abstractmethod
     def select_where(self, query_or_table: str, columns: Sequence[str] | None = None, where: str | None = None, params: tuple = ()) -> list[dict[str, Any]]:

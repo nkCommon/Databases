@@ -1,6 +1,7 @@
 import pytds
 from Database.src.dbbase import DBBase
 from typing import Any
+import pandas as pd
 
 class MSSQLDatabase(DBBase):
     """Microsoft SQL Server implementation of BaseDatabase (no ODBC)."""
@@ -23,7 +24,14 @@ class MSSQLDatabase(DBBase):
             with conn.cursor() as cur:
                 cur.execute(query, params)
                 return cur.fetchall()
-
+    
+    def select_df(self, query: str, params: tuple = ()) -> pd.DataFrame:
+        with self.connect() as conn:
+            with conn.cursor() as cur:
+                cur.execute(query, params)
+                rows = cur.fetchall()
+        return pd.DataFrame(rows)
+    
     def select_where(
             self,
             query_or_table: str,
