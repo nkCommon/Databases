@@ -17,7 +17,7 @@ class MSSQLDatabase(DBBase):
             password=self.password,
             port=self.port,
             as_dict=True,
-            bytes_to_unicode=False
+            bytes_to_unicode=True
         )
 
     def select(self, query: str, params: tuple = ()) -> list[dict[str, Any]]:
