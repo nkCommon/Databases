@@ -39,8 +39,9 @@ class PostgreSQLDatabase(DBBase):
             with conn.cursor() as cur:
                 cur.execute(query, params)
                 return cur.fetchall()
-
-    def select_df(self, query: str, params: tuple = ()) -> pd.DataFrame:
+    def select_df(self, query: str, params: tuple = (), include_columns_when_empty: bool = False) -> pd.DataFrame:
+    #def select_df(self, query: str, params: tuple = ()) -> pd.DataFrame:
+    ## ToDo implement include_columns_when_empty
         with self.connect() as conn:
             with conn.cursor() as cur:
                 cur.execute(query, params)

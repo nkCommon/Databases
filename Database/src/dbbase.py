@@ -51,7 +51,7 @@ class DBBase(ABC):
         """Execute a SELECT query and return rows."""
         pass
     @abstractmethod
-    def select_df(self, query: str, params: tuple = ()) -> pd.DataFrame:
+    def select_df(self, query: str, params: tuple = (), include_columns_when_empty: bool = False) -> pd.DataFrame:
         """Execute a SELECT query and return a pandas DataFrame."""
         pass
     @abstractmethod

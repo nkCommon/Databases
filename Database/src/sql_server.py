@@ -26,13 +26,25 @@ class MSSQLDatabase(DBBase):
                 cur.execute(query, params)
                 return cur.fetchall()
     
-    def select_df(self, query: str, params: tuple = ()) -> pd.DataFrame:
+    def select_df(self, query: str, params: tuple = (), include_columns_when_empty: bool = False) -> pd.DataFrame:
+    #def select_df(self, query: str, params: tuple = ()) -> pd.DataFrame:
+        if include_columns_when_empty:
+            return self.select_df_with_columns(query, params)
+        
         with self.connect() as conn:
             with conn.cursor() as cur:
                 cur.execute(query, params)
                 rows = cur.fetchall()
         return pd.DataFrame(rows)
-    
+
+    def select_df_with_columns(self, query: str, params: tuple = ()) -> pd.DataFrame:
+        with self.connect() as conn:
+            with conn.cursor() as cur:
+                cur.execute(query, params)
+                rows = cur.fetchall()
+                columns = [col[0] for col in cur.description] if cur.description else []
+        return pd.DataFrame(rows, columns=columns)
+
     def select_where(
             self,
             query_or_table: str,
