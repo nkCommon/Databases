@@ -74,6 +74,10 @@ class DBBase(ABC):
         """Delete rows in the given table matching the WHERE condition."""
         pass
     @abstractmethod
+    def empty_table(self, table: str) -> None:
+        """Delete all rows in the given table."""
+        pass
+    @abstractmethod
     def get_table_schema(self, table: str) -> dict[str, str]:
         """
         Returns: {column_name: data_type}

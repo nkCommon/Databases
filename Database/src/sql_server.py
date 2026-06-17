@@ -96,6 +96,9 @@ class MSSQLDatabase(DBBase):
     def delete(self, table: str, where: str, params: tuple = ()) -> None:
         query = f"DELETE FROM {table} WHERE {where}"
         return self.execute(query, params)
+    def empty_table(self, table: str) -> None:
+        query = f"TRUNCATE TABLE {table}"
+        return self.execute(query)
     
     def get_table_schema(self, table: str) -> dict[str, str]:
         """
