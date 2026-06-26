@@ -10,15 +10,19 @@ class MSSQLDatabase(DBBase):
         super().__init__(host, database, user, password, port)
 
     def connect(self):
-        return pytds.connect(
+        kwargs = dict(
             server=self.host,
             database=self.database,
             user=self.user,
             password=self.password,
-            port=self.port,
             as_dict=True,
-            bytes_to_unicode=False
+            bytes_to_unicode=False,
         )
+        # pytds raises ValueError if both a named instance (SERVER\INSTANCE) and a
+        # port are specified — named instances resolve their own port via SQL Browser.
+        if "\\" not in self.host:
+            kwargs["port"] = self.port
+        return pytds.connect(**kwargs)
 
     def select(self, query: str, params: tuple = ()) -> list[dict[str, Any]]:
         with self.connect() as conn:

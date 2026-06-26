@@ -376,6 +376,57 @@ class TesSQLServer(unittest.TestCase):
     # *************************************************************************************************************
 
 
+########################################################################################################################
+### Tests for SQL Server — named instance (backslash in host)
+########################################################################################################################
+
+class TestMSSQLNamedInstance(unittest.TestCase):
+    """Regression test for: both instance and port shouldn't be specified.
+
+    pytds raises ValueError when server contains a backslash (named instance)
+    and a port is also passed. The fix in MSSQLDatabase.connect() omits the
+    port in that case so SQL Browser can resolve it instead.
+    """
+
+    HOST = r"nksqlkomlis01.samdrift.dk\sql2016"
+    DATABASE = "master"
+    USER = "sqltester"
+    PASSWORD = "1i743"
+
+    def _make_db(self):
+        return DatabaseFactory.create(
+            db_type=DatabaseType.MSSQL,
+            host=self.HOST,
+            database=self.DATABASE,
+            user=self.USER,
+            password=self.PASSWORD,
+            port=1433,
+        )
+
+    def test_construction_does_not_raise(self):
+        # Building the object must not raise — port validation happens in connect()
+        db = self._make_db()
+        self.assertIsNotNone(db)
+        self.assertEqual(type(db).__name__, "MSSQLDatabase")
+
+    def test_connect_named_instance(self):
+        # Regression: must not raise "Both instance and port shouldn't be specified"
+        db = self._make_db()
+        try:
+            conn = db.connect()
+        except ValueError as e:
+            self.fail(f"connect() raised ValueError (instance+port conflict): {e}")
+        self.assertIsNotNone(conn)
+        conn.close()
+
+    def test_select_one(self):
+        # Confirms the connection is actually usable end-to-end
+        db = self._make_db()
+        result = db.select("SELECT 1 AS n")
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0]["n"], 1)
+
+
 if __name__ == '__main__':
     unittest.main()
     
