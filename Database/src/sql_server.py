@@ -1,4 +1,5 @@
 import pytds
+import ssl
 from Database.src.dbbase import DBBase
 from typing import Any
 import pandas as pd
@@ -6,8 +7,10 @@ import pandas as pd
 class MSSQLDatabase(DBBase):
     """Microsoft SQL Server implementation of BaseDatabase (no ODBC)."""
 
-    def __init__(self, host, database, user, password, port=1433):
+    def __init__(self, host, database, user, password, port=1433, encrypt=False, verify_ssl=True):
         super().__init__(host, database, user, password, port)
+        self.encrypt = encrypt
+        self.verify_ssl = verify_ssl
 
     def connect(self):
         kwargs = dict(
@@ -22,6 +25,13 @@ class MSSQLDatabase(DBBase):
         # port are specified — named instances resolve their own port via SQL Browser.
         if "\\" not in self.host:
             kwargs["port"] = self.port
+        if self.encrypt:
+            kwargs["encryption"] = pytds.TDS_ENCRYPTION_REQUIRE
+            if not self.verify_ssl:
+                ctx = ssl.create_default_context()
+                ctx.check_hostname = False
+                ctx.verify_mode = ssl.CERT_NONE
+                kwargs["tls_ctx"] = ctx
         return pytds.connect(**kwargs)
 
     def select(self, query: str, params: tuple = ()) -> list[dict[str, Any]]:
