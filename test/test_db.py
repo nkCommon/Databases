@@ -236,6 +236,19 @@ class TesSQLServer(unittest.TestCase):
             port=1433
         )
         return db
+    
+    def _make_frontdesk_db(self):
+        db = DatabaseFactory.create(
+            db_type=DatabaseType.MSSQL,
+            host="sqlsrv-naestved-frontdesk-de.database.windows.net",
+            database="sqldb-naestved-frontdesk-de",
+            user="fddatareader",
+            password="Xw#DmUYK2yx8u^qM",
+            port=1433,
+            encrypt=True,
+            verify_ssl=False
+        )
+        return db
     ########################################################################################################################
     ### Tests        
     ########################################################################################################################
@@ -250,6 +263,10 @@ class TesSQLServer(unittest.TestCase):
         db = self._make_db()        
         conn = db.connect()
         self.assertIsNotNone(conn)
+        db = self._make_frontdesk_db()
+        conn = db.connect()
+        self.assertIsNotNone(conn)
+        
     # *************************************************************************************************************
     def test_insert(self):
         db = self._make_db()

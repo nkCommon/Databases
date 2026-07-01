@@ -1,5 +1,6 @@
-import pytds
 import ssl
+
+import pytds
 from Database.src.dbbase import DBBase
 from typing import Any
 import pandas as pd
@@ -26,12 +27,8 @@ class MSSQLDatabase(DBBase):
         if "\\" not in self.host:
             kwargs["port"] = self.port
         if self.encrypt:
-            kwargs["encryption"] = pytds.TDS_ENCRYPTION_REQUIRE
-            if not self.verify_ssl:
-                ctx = ssl.create_default_context()
-                ctx.check_hostname = False
-                ctx.verify_mode = ssl.CERT_NONE
-                kwargs["tls_ctx"] = ctx
+            kwargs["cafile"] = ssl.get_default_verify_paths().cafile
+            kwargs["validate_host"] = self.verify_ssl
         return pytds.connect(**kwargs)
 
     def select(self, query: str, params: tuple = ()) -> list[dict[str, Any]]:

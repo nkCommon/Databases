@@ -19,7 +19,9 @@ class DatabaseFactory:
         database: str = "",
         user: str = "",
         password: str = "",
-        port: int | None = None
+        port: int | None = None,
+        encrypt: bool = False, 
+        verify_ssl: bool = False
     ) -> DBBase:
         """
         Create an instance of a database/connection
@@ -42,7 +44,7 @@ class DatabaseFactory:
         if db_type == DatabaseType.POSTGRESQL:
             return PostgreSQLDatabase(host, database, user, password, port or 5432)
         elif db_type == DatabaseType.MSSQL:
-            return MSSQLDatabase(host, database, user, password, port or 1433)
+            return MSSQLDatabase(host, database, user, password, port or 1433, encrypt=encrypt, verify_ssl=verify_ssl)
         elif db_type == DatabaseType.MYSQL:
             return MySQLDatabase(host, database, user, password, port or 3306)
         elif db_type == DatabaseType.SQLITE:
