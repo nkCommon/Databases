@@ -4,7 +4,16 @@ from Database.src.dbfactory import DatabaseFactory, DatabaseType
 from datetime import datetime
 import pandas as pd
 import uuid
-########################################################################################################################
+
+########
+import os
+from dotenv import load_dotenv
+load_dotenv()
+FRONTEND_HOST = os.getenv("FRONTEND_HOST")
+FRONTEND_DB = os.getenv("FRONTEND_DB")
+FRONTEND_USER = os.getenv("FRONTEND_USER")
+FRONTEND_PASSWORD = os.getenv("FRONTEND_PASSWORD")
+################################################################################################################
 ### Tests for PostgreSQL
 ########################################################################################################################
 
@@ -240,10 +249,10 @@ class TesSQLServer(unittest.TestCase):
     def _make_frontdesk_db(self):
         db = DatabaseFactory.create(
             db_type=DatabaseType.MSSQL,
-            host="sqlsrv-naestved-frontdesk-de.database.windows.net",
-            database="sqldb-naestved-frontdesk-de",
-            user="fddatareader",
-            password="Xw#DmUYK2yx8u^qM",
+            host=FRONTEND_HOST,
+            database=FRONTEND_DB,
+            user=FRONTEND_USER,
+            password=FRONTEND_PASSWORD,
             port=1433,
             encrypt=True,
             verify_ssl=False
@@ -263,6 +272,7 @@ class TesSQLServer(unittest.TestCase):
         db = self._make_db()        
         conn = db.connect()
         self.assertIsNotNone(conn)
+        
         db = self._make_frontdesk_db()
         conn = db.connect()
         self.assertIsNotNone(conn)
