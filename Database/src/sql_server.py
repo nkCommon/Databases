@@ -1,4 +1,5 @@
 import ssl
+import certifi
 
 import pytds
 from Database.src.dbbase import DBBase
@@ -27,7 +28,8 @@ class MSSQLDatabase(DBBase):
         if "\\" not in self.host:
             kwargs["port"] = self.port
         if self.encrypt:
-            kwargs["cafile"] = ssl.get_default_verify_paths().cafile
+            cafile = ssl.get_default_verify_paths().cafile or certifi.where()
+            kwargs["cafile"] = cafile
             kwargs["validate_host"] = self.verify_ssl
         return pytds.connect(**kwargs)
 
