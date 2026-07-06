@@ -276,8 +276,8 @@ class TestSQLServer(unittest.TestCase):
         db = self._make_frontdesk_db()
         conn = db.connect()
         self.assertIsNotNone(conn)
-        # result = db.select("SELECT * FROM dbo.ResourceReserved;")
-        # self.assertEqual(len(result), 4)
+        result = db.select("SELECT * FROM dbo.ResourceReserved;")
+        self.assertGreater(len(result), 0)
         
         
         
