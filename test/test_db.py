@@ -225,7 +225,7 @@ class TestPostgreSQL(unittest.TestCase):
 ########################################################################################################################
 ########################################################################################################################
 
-class TesSQLServer(unittest.TestCase):
+class TestSQLServer(unittest.TestCase):
     def setUp(self):
         # Setup code: create resources needed for tests
         pass
@@ -276,6 +276,10 @@ class TesSQLServer(unittest.TestCase):
         db = self._make_frontdesk_db()
         conn = db.connect()
         self.assertIsNotNone(conn)
+        # result = db.select("SELECT * FROM dbo.ResourceReserved;")
+        # self.assertEqual(len(result), 4)
+        
+        
         
     # *************************************************************************************************************
     def test_insert(self):
